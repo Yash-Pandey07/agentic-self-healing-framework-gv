@@ -204,6 +204,27 @@ jobs:
           EOF
 
           python3 -m json.tool /tmp/run.json > /dev/null && echo "✅ run.json is valid"
+
+          TIME_SAVED_HOURS=$(python3 -c "print(round(${SELECTOR_HEALS} * 0.5 / 60, 4))")
+          if [ "$DENOM" -gt 0 ]; then
+            HEAL_RATE_FRACTION=$(python3 -c "print(round(${SELECTOR_HEALS} / ${DENOM}, 4))")
+          else
+            HEAL_RATE_FRACTION="0.0"
+          fi
+
+          cat > ci-summary.json <<EOF
+          {
+            "totalRuns": ${TOTAL},
+            "selectorHeals": ${SELECTOR_HEALS},
+            "flowHeals": 0,
+            "failures": ${FAILED},
+            "timeSavedHours": ${TIME_SAVED_HOURS},
+            "healRate": ${HEAL_RATE_FRACTION}
+          }
+          EOF
+
+          python3 -m json.tool ci-summary.json > /dev/null && echo "✅ ci-summary.json is valid"
+
           echo "RUN_ID=${RUN_ID}" >> $GITHUB_OUTPUT
           echo "TIMESTAMP=${TIMESTAMP}" >> $GITHUB_OUTPUT
 
@@ -263,3 +284,10 @@ jobs:
           git commit -m "data: run #${{ github.run_number }} @ ${TIMESTAMP}"
           git push origin dashboard-data
           echo "✅ Dashboard data pushed to dashboard-data branch"
+
+      - name: Upload CI Summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-summary
+          path: ci-summary.json
