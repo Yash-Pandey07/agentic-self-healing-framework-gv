@@ -145,6 +145,8 @@ jobs:
           BRANCH="${{ github.ref_name }}"
           SHA="${{ github.sha }}"
           EVENT="${{ github.event_name }}"
+          REPO="${{ github.repository }}"
+          WORKFLOW="${{ github.workflow }}"
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
           TOTAL=0; PASSED=0; FAILED=0; BROKEN=0; SKIPPED=0
@@ -161,70 +163,49 @@ jobs:
           done
 
           SELECTOR_HEALS=0
-          HEAL_LIST=""
           for f in target/allure-results/*-attachment.txt; do
             [ -f "$f" ] || continue
-            CONTENT=$(cat "$f")
-            if echo "$CONTENT" | grep -qi "healed"; then
-              ELEMENT=$(echo "$CONTENT" | sed 's/Healed //; s/ using locator.*//')
-              LOCATOR=$(echo "$CONTENT" | sed 's/.* using locator //')
-              HEAL_LIST="${HEAL_LIST},{\"element\":\"${ELEMENT}\",\"locator\":\"${LOCATOR}\"}"
+            if grep -qi "healed" "$f"; then
               SELECTOR_HEALS=$((SELECTOR_HEALS+1))
             fi
           done
 
-          HEAL_EVENTS="[]"
-          [ -n "$HEAL_LIST" ] && HEAL_EVENTS="[${HEAL_LIST:1}]"
-
-          if [ "$SELECTOR_HEALS" -gt 0 ]; then
-            HEAL_RATE=$(python3 -c "print(round($SELECTOR_HEALS/max($TOTAL,1)*100,1))")
+          # Calculate metrics matching friend's format
+          # Estimated time saved: 0.5 mins per heal (based on 11 heals = 5.5 in example)
+          EST_SAVED=$(python3 -c "print($SELECTOR_HEALS * 0.5)")
+          
+          # Heal Success Rate: (heals / (heals + failures)) * 100 (based on 11 heals, 11 failures = 50% in example)
+          DENOM=$((SELECTOR_HEALS + FAILED))
+          if [ "$DENOM" -gt 0 ]; then
+            HEAL_RATE=$(python3 -c "print(round(($SELECTOR_HEALS / $DENOM) * 100, 1))")
           else
-            HEAL_RATE=0
+            HEAL_RATE="100.0"
           fi
-          TIME_SAVED=$(python3 -c "print($SELECTOR_HEALS * 2)")
 
           cat > /tmp/run.json <<EOF
           {
             "runId": "${RUN_ID}",
-            "runNumber": ${RUN_NUMBER},
+            "runNumber": "${RUN_NUMBER}",
+            "workflowName": "${WORKFLOW}",
+            "repository": "${REPO}",
             "branch": "${BRANCH}",
             "commitSha": "${SHA}",
             "event": "${EVENT}",
             "generatedAt": "${TIMESTAMP}",
-            "summary": {
-              "totalTests": ${TOTAL},
-              "passed": ${PASSED},
-              "failed": ${FAILED},
-              "broken": ${BROKEN},
-              "skipped": ${SKIPPED},
-              "selectorHeals": ${SELECTOR_HEALS},
-              "flowHeals": ${SELECTOR_HEALS},
-              "estimatedTimeSavedMins": ${TIME_SAVED},
-              "healSuccessRatePct": ${HEAL_RATE}
-            },
-            "healEvents": ${HEAL_EVENTS}
+            "totalRuns": ${TOTAL},
+            "totalTestsCompleted": ${TOTAL},
+            "totalSelectorHeals": ${SELECTOR_HEALS},
+            "totalFlowHeals": 0,
+            "totalFailures": ${FAILED},
+            "estimatedTimeSaved": "${EST_SAVED}",
+            "healSuccessRate": "${HEAL_RATE}",
+            "file": "runs/${RUN_ID}.json"
           }
           EOF
 
           python3 -m json.tool /tmp/run.json > /dev/null && echo "✅ run.json is valid"
           echo "RUN_ID=${RUN_ID}" >> $GITHUB_OUTPUT
           echo "TIMESTAMP=${TIMESTAMP}" >> $GITHUB_OUTPUT
-
-          # ── Print summary to Actions log ──────────────────────────
-          echo ""
-          echo "╔══════════════════════════════════════════════════╗"
-          echo "║        🤖 SELF-HEALING REPORT SUMMARY           ║"
-          echo "╠══════════════════════════════════════════════════╣"
-          echo "║  Run #${RUN_NUMBER} | Branch: ${BRANCH}"
-          echo "║  Commit: ${SHA:0:7}"
-          echo "╠══════════════════════════════════════════════════╣"
-          echo "║  Total Tests     : ${TOTAL}"
-          echo "║  ✅ Passed       : ${PASSED}"
-          echo "║  ❌ Failed       : ${FAILED}"
-          echo "║  🔧 Heals        : ${SELECTOR_HEALS}"
-          echo "║  ⏱ Time Saved   : ${TIME_SAVED} mins"
-          echo "║  📈 Heal Rate    : ${HEAL_RATE}%"
-          echo "╚══════════════════════════════════════════════════╝"
 
       - name: 💾 Push Run Data to dashboard-data Branch
         env:
@@ -243,7 +224,7 @@ jobs:
             git checkout --orphan dashboard-data
             git rm -rf . 2>/dev/null || true
             mkdir -p runs
-            echo '{"runs":[]}' > history.json
+            echo '[]' > history.json
             git add history.json
             git commit -m "chore: init dashboard-data branch"
             git push origin dashboard-data
@@ -257,25 +238,25 @@ jobs:
           import json, os
           with open('/tmp/run.json') as f:
               new_run = json.load(f)
-          summary_entry = {
-              "runId":       new_run["runId"],
-              "runNumber":   new_run["runNumber"],
-              "branch":      new_run["branch"],
-              "commitSha":   new_run["commitSha"],
-              "generatedAt": new_run["generatedAt"],
-              "summary":     new_run["summary"]
-          }
+          
           history_path = "history.json"
           if os.path.exists(history_path):
               with open(history_path) as f:
-                  history = json.load(f)
+                  try:
+                      history = json.load(f)
+                      if not isinstance(history, list):
+                          history = []
+                  except:
+                      history = []
           else:
-              history = {"runs": []}
-          history["runs"].insert(0, summary_entry)
-          history["runs"] = history["runs"][:50]
+              history = []
+          
+          history.insert(0, new_run)
+          history = history[:50]
+          
           with open(history_path, "w") as f:
               json.dump(history, f, indent=2)
-          print(f"✅ history.json updated — {len(history['runs'])} run(s) stored")
+          print(f"✅ history.json updated — {len(history)} run(s) stored")
           PYEOF
 
           git add runs/${RUN_ID}.json latest.json history.json
