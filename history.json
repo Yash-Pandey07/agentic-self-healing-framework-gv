@@ -1,1 +1,22 @@
-{"runs":[]}
+{
+  "runs": [
+    {
+      "runId": "24624714216",
+      "runNumber": 2,
+      "branch": "main",
+      "commitSha": "a1fb7a192fe6eebc063f3186689e1b86f881b66e",
+      "generatedAt": "2026-04-19T08:24:35Z",
+      "summary": {
+        "totalTests": 12,
+        "passed": 1,
+        "failed": 4,
+        "broken": 0,
+        "skipped": 0,
+        "selectorHeals": 4,
+        "flowHeals": 4,
+        "estimatedTimeSavedMins": 8,
+        "healSuccessRatePct": 33.3
+      }
+    }
+  ]
+}
