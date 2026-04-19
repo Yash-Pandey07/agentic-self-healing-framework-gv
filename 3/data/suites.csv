@@ -1,6 +1,0 @@
-"DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
-"","9556","testSettingsAndSignOut()","","Sun Apr 19 11:12:09 UTC 2026","failed","Sun Apr 19 11:12:18 UTC 2026","","com.selfhealing.RetailWebsiteTest","com.selfhealing.RetailWebsiteTest","testSettingsAndSignOut"
-"","12503","testUserLoginHealing()","","Sun Apr 19 11:11:36 UTC 2026","failed","Sun Apr 19 11:11:49 UTC 2026","","com.selfhealing.RetailWebsiteTest","com.selfhealing.RetailWebsiteTest","testUserLoginHealing"
-"","879","testAddProductToCart()","","Sun Apr 19 11:11:58 UTC 2026","passed","Sun Apr 19 11:11:59 UTC 2026","","com.selfhealing.RetailWebsiteTest","com.selfhealing.RetailWebsiteTest","testAddProductToCart"
-"","9385","testCheckoutPayment()","","Sun Apr 19 11:11:59 UTC 2026","failed","Sun Apr 19 11:12:09 UTC 2026","","com.selfhealing.RetailWebsiteTest","com.selfhealing.RetailWebsiteTest","testCheckoutPayment"
-"","9568","testNavigationToProducts()","","Sun Apr 19 11:11:49 UTC 2026","failed","Sun Apr 19 11:11:58 UTC 2026","","com.selfhealing.RetailWebsiteTest","com.selfhealing.RetailWebsiteTest","testNavigationToProducts"
