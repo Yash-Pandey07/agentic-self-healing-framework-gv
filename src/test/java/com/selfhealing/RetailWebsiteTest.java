@@ -40,9 +40,9 @@ public class RetailWebsiteTest {
     @Severity(SeverityLevel.CRITICAL)
     public void testUserLoginHealing() {
         driver.get("https://retail-website-two.vercel.app/login");
-        orchestrator.resilientFill("input[type='email']", "test@demo.com", "Email Input", "TC1-Step-1"); // PASS
-        orchestrator.resilientFill(".broken-pass", "password123", "Password Input", "TC1-Step-2"); // HEAL
-        orchestrator.resilientClick("//button[contains(., 'Sign in')]", "Sign In Button", "TC1-Step-3"); // PASS
+        orchestrator.resilientFill("input[type='email']", "test@demo.com", "Email Input", "TC1-Step-1");
+        orchestrator.resilientFill("input[type='password']", "password123", "Password Input", "TC1-Step-2");
+        orchestrator.resilientClick("//button[contains(., 'Sign in')]", "Sign In Button", "TC1-Step-3");
         
         try { Thread.sleep(2000); } catch (Exception e) {} 
         orchestrator.assertNoHealing();
@@ -54,7 +54,7 @@ public class RetailWebsiteTest {
     @Severity(SeverityLevel.NORMAL)
     public void testNavigationToProducts() {
         driver.get("https://retail-website-two.vercel.app/app/dashboard");
-        orchestrator.resilientClick(".broken-products-link", "Products Menu", "TC2-Step-1"); // HEAL
+        orchestrator.resilientClick("a[href*='products']", "Products Menu", "TC2-Step-1");
         try { Thread.sleep(1000); } catch (Exception e) {}
         orchestrator.assertNoHealing();
     }
@@ -75,7 +75,7 @@ public class RetailWebsiteTest {
     @Severity(SeverityLevel.CRITICAL)
     public void testCheckoutPayment() {
         driver.get("https://retail-website-two.vercel.app/app/cart");
-        orchestrator.resilientFill(".broken-fullname", "John Doe", "Full Name Input", "TC4-Step-1"); // HEAL
+        orchestrator.resilientFill("input[name='fullname']", "John Doe", "Full Name Input", "TC4-Step-1");
         orchestrator.resilientClick("#root", "Pay Button", "TC4-Step-2"); // PASS
         orchestrator.assertNoHealing();
     }
@@ -86,7 +86,7 @@ public class RetailWebsiteTest {
     @Severity(SeverityLevel.NORMAL)
     public void testSettingsAndSignOut() {
         driver.get("https://retail-website-two.vercel.app/app/settings");
-        orchestrator.resilientClick(".broken-settings", "Settings Menu", "TC5-Step-1"); // HEAL
+        orchestrator.resilientClick("button[aria-label='settings']", "Settings Menu", "TC5-Step-1");
         try { Thread.sleep(1000); } catch (Exception e) {}
         driver.get("https://retail-website-two.vercel.app/login");
         orchestrator.assertNoHealing();
